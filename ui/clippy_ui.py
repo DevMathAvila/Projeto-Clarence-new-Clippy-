@@ -7,7 +7,6 @@ from PyQt6.QtCore import Qt, QSize, QThread, pyqtSignal
 from services.openai_service import ask_openai
 
 class OpenAIWorker(QThread):
-    """Thread dedicada para evitar que a interface trave durante a requisição."""
     result_ready = pyqtSignal(str)
 
     def __init__(self, prompt: str):
@@ -15,7 +14,6 @@ class OpenAIWorker(QThread):
         self.prompt = prompt
 
     def run(self):
-        # A chamada da API acontece aqui, fora da thread da interface
         response = ask_openai(self.prompt)
         self.result_ready.emit(response)
 
@@ -25,7 +23,6 @@ class Clarence(QWidget):
         self._expanded = False
         self._drag_pos = None
         
-        # Flags de Janela: Sem bordas, sempre no topo e modo Tool (não aparece na barra de tarefas se desejar)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | 
             Qt.WindowType.WindowStaysOnTopHint | 
@@ -37,25 +34,19 @@ class Clarence(QWidget):
         self.apply_appearance()
 
     def setup_ui(self):
-        """Constrói a hierarquia de widgets de forma responsiva."""
-        # Layout Principal
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 1. Modo Compacto (Bolinha)
         self.icon_label = QLabel("C")
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # 2. Modo Expandido (Container)
         self.container = QFrame()
         self.container.setVisible(False)
         
-        # Layout interno do Container (Chat)
         chat_layout = QVBoxLayout(self.container)
         chat_layout.setContentsMargins(15, 10, 15, 15)
         chat_layout.setSpacing(10)
 
-        # Header com botão fechar
         header_layout = QHBoxLayout()
         header_layout.addStretch()
         self.close_btn = QPushButton("✕")
@@ -64,23 +55,19 @@ class Clarence(QWidget):
         self.close_btn.clicked.connect(QApplication.quit)
         header_layout.addWidget(self.close_btn)
         
-        # Área de Resposta
         self.response_view = QTextEdit()
         self.response_view.setReadOnly(True)
         self.response_view.setPlaceholderText("Aguardando sua pergunta...")
 
-        # Campo de Entrada
         self.input_field = QTextEdit()
         self.input_field.setFixedHeight(65)
         self.input_field.setPlaceholderText("Escreva algo e aperte Enter...")
         self.input_field.installEventFilter(self)
 
-        # Botão Enviar
         self.submit_btn = QPushButton("Enviar")
         self.submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.submit_btn.clicked.connect(self.process_request)
 
-        # Montagem do Layout
         chat_layout.addLayout(header_layout)
         chat_layout.addWidget(self.response_view)
         chat_layout.addWidget(self.input_field)
@@ -137,7 +124,6 @@ class Clarence(QWidget):
         self.response_view.setText("Clarence está pensando...")
         self.submit_btn.setEnabled(False)
 
-        # Dispara a Worker Thread
         self.worker = OpenAIWorker(prompt)
         self.worker.result_ready.connect(self.on_response_received)
         self.worker.start()
@@ -153,7 +139,6 @@ class Clarence(QWidget):
         self.container.setVisible(self._expanded)
         self.apply_appearance()
 
-    # --- Gerenciamento de Eventos ---
     def mouseDoubleClickEvent(self, event):
         self.toggle_state()
 
@@ -172,7 +157,6 @@ class Clarence(QWidget):
                 return True
         return super().eventFilter(source, event)
 
-# --- FUNÇÃO RESTAURADA PARA O SEU MAIN.PY ---
 def run_clarence():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)

@@ -14,7 +14,6 @@ def ask_openai(prompt: str) -> str:
             input=prompt,
             store=True
         )
-        # Pega o texto final
         return response.output_text
     except Exception as e:
         return f"Erro ao chamar OpenAI: {e}"
